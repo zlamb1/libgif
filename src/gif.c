@@ -254,7 +254,7 @@ read_block:
           }
 
         if (num_colors > (1 << min_lzw_code_size))
-          num_colors = 1 << (1 << min_lzw_code_size);
+          num_colors = 1 << min_lzw_code_size;
 
         gu16 first_next_code = (1 << min_lzw_code_size) + 2;
         next_code            = first_next_code;

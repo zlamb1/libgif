@@ -20,7 +20,6 @@
  * IN THE SOFTWARE.
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -142,7 +141,7 @@ read_block:
       {
         struct gif_image img = { 0 };
         gu8 is_interlaced    = 0;
-        size_t num_colors;
+        gu16 num_colors;
 
         VEC_MUST (v, 0xA);
 
@@ -182,6 +181,9 @@ read_block:
         if (packed_byte & 0x80)
           {
             gusize num_bytes;
+
+            img.flags |= GIF_IMAGE_FLAG_LCT;
+
             img.lct.num_colors = 1 << ((packed_byte & 0x7) + 1);
             num_colors         = img.lct.num_colors;
             num_bytes          = img.lct.num_colors * 3;
@@ -249,9 +251,18 @@ read_block:
             return GIF_ERR_BAD_DATA;
           }
 
-        next_code = (1LU << min_lzw_code_size) + 2;
+        gu16 first_next_code = (1 << min_lzw_code_size) + 2;
+        next_code            = first_next_code;
 
-        for (gu16 i = 0; i < num_colors; i++)
+        gu16 max_color = num_colors;
+
+        // NOTE: non-standard convention that indices that fall in gap
+        // between colors and clear code are transparent
+        // we map num_colors + 1 to a transparent color if a gap exists
+        if (num_colors < (1 << min_lzw_code_size))
+          ++max_color;
+
+        for (gu16 i = 0; i < max_color; i++)
           {
             code_table[i].len         = 1;
             code_table[i].prefix_code = GIF_CODE_NO_PREFIX;
@@ -260,7 +271,7 @@ read_block:
             code_table[i].first_index = i;
           }
 
-        for (gu16 i = num_colors; i < 4096; i++)
+        for (gu16 i = first_next_code; i < 4096; i++)
           code_table[i].inuse = 0;
 
         while (bytes)
@@ -302,10 +313,10 @@ read_block:
                       {
                         first_code    = 1;
                         lzw_code_size = min_lzw_code_size + 1;
-                        next_code     = (1UL << min_lzw_code_size) + 2;
+                        next_code     = first_next_code;
 
                         // reset code table to initial state
-                        for (gu16 i = num_colors; i < 4096; i++)
+                        for (gu16 i = first_next_code; i < 4096; i++)
                           code_table[i].inuse = 0;
 
                         code     = 0;
@@ -318,8 +329,14 @@ read_block:
                       {
                         if (code >= num_colors)
                           {
-                            gif_free (gif);
-                            return GIF_ERR_BAD_DATA;
+                            if (code >= first_next_code)
+                              {
+                                gif_free (gif);
+                                return GIF_ERR_BAD_DATA;
+                              }
+
+                            // if in gap, normalize to transparent index
+                            code = num_colors;
                           }
 
                         if (num_indices >= req_indices)

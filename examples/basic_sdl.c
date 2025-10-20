@@ -153,14 +153,20 @@ sdl_init (struct gif *gif)
           gu8 index = image->indices[i];
           gu8 *comps;
 
-          if (index >= palette->num_colors)
+          if (index > palette->num_colors)
             {
               fprintf (stderr, "invalid GIF color index\n");
               return -1;
             }
 
-          if (index == transparent_index)
+          if (index == palette->num_colors)
             SDL_SetRenderDrawColor (renderer, 0, 0, 0, 0);
+          else if (index == transparent_index)
+            {
+              comps = palette->colors + 3 * index;
+              SDL_SetRenderDrawColor (renderer, comps[0], comps[1], comps[2],
+                                      0);
+            }
           else
             {
               comps = palette->colors + 3 * index;

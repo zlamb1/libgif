@@ -20,6 +20,7 @@
  * IN THE SOFTWARE.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -171,6 +172,7 @@ read_block:
             || (gu32) img.x + (gu32) img.width > (gu32) gif->width
             || (gu32) img.y + (gu32) img.height > (gu32) gif->height)
           {
+            printf ("WIDTH/X\n");
             gif_free (gif);
             return GIF_ERR_BAD_DATA;
           }
@@ -204,6 +206,7 @@ read_block:
           }
         else if (!(gif->flags & GIF_FLAG_GCT))
           {
+            printf ("NO LCT OR GCT\n");
             gif_free (gif);
             return GIF_ERR_BAD_DATA;
           }
@@ -244,12 +247,14 @@ read_block:
 
         bytes = VEC_AT_UNSAFE (v, 0);
 
-        if (!bytes || (min_lzw_code_size < 2 || min_lzw_code_size > 8)
-            || num_colors > (1UL << min_lzw_code_size))
+        if (!bytes || (min_lzw_code_size < 2 || min_lzw_code_size > 8))
           {
             gif_free (gif);
             return GIF_ERR_BAD_DATA;
           }
+
+        if (num_colors > (1 << min_lzw_code_size))
+          num_colors = 1 << (1 << min_lzw_code_size);
 
         gu16 first_next_code = (1 << min_lzw_code_size) + 2;
         next_code            = first_next_code;
@@ -331,6 +336,7 @@ read_block:
                           {
                             if (code >= first_next_code)
                               {
+                                printf ("INVALID FIRST CODE\n");
                                 gif_free (gif);
                                 return GIF_ERR_BAD_DATA;
                               }
@@ -455,6 +461,7 @@ read_block:
 
         if (num_indices != req_indices)
           {
+            printf ("INCOMPLETE IMAGE\n");
             gif_free (gif);
             return GIF_ERR_BAD_DATA;
           }

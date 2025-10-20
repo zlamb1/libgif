@@ -29,7 +29,7 @@ basic_sdl = executable(
 
 example_dir = meson.project_source_root() + '/examples'
 
-examples = ['gap_indices', 'interlaced', 'misc1']
+examples = ['gap_indices', 'interlaced', 'misc1', 'misc2']
 
 foreach n : examples
   test(f'test_@n@', basic_sdl, args : [f'@n@.gif', '-t'], workdir : example_dir)

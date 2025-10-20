@@ -339,22 +339,16 @@ main (int argc, const char *argv[])
 
   while (run)
     {
-      gu8 did_expose = 0;
-
       while (SDL_PollEvent (&event) != 0)
         {
           if (event.type == SDL_EVENT_QUIT)
             run = 0;
           else if (event.type == SDL_EVENT_WINDOW_EXPOSED)
             {
-              did_expose = 1;
               sdl_draw_frame (&gif);
               SDL_RenderPresent (renderer);
             }
         }
-
-      if (did_expose)
-        continue;
 
       Uint64 ticks_now = SDL_GetTicks ();
 

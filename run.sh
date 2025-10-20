@@ -1,3 +1,3 @@
 meson compile -C build
 cd examples
-../build/basic misc2.gif
+../build/basic small_min_code_size.gif
